@@ -23,9 +23,9 @@ const UserSchema = new mongoose.Schema({
     profilePicture: {
         type: String,
     },
-    linkedinId: { type: String, required: false, unique: true },
-    accessToken: { type: String, required: false },
-    createdAt: { type: Date, default: Date.now }
+    // linkedinId: { type: String, required: false, unique: true },
+    // accessToken: { type: String, required: false },
+    // createdAt: { type: Date, default: Date.now }
 });
 
 UserSchema.pre('save', async function(next) {

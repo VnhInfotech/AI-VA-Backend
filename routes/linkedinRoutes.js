@@ -1,23 +1,42 @@
 const express = require('express');
 const linkedinController = require('../controllers/linkedinController');
+const authMiddleware = require('../middleware/authMiddleware');
+const LinkedInAccount = require('../models/LinkedInAccount');
 
 const router = express.Router();
 
-// Middleware to check if user is authenticated
-const isAuthenticated = (req, res, next) => {
-    if (req.session.userId) { // Check if user is logged in
-        return next();
+router.get('/linkedin/redirect', linkedinController.redirectToLinkedIn);
+router.get('/linkedin/callback', linkedinController.handleLinkedInCallback);
+router.post('/linkedin/post', authMiddleware, linkedinController.postToLinkedIn);
+// router.post('/linkedin/schedule', authMiddleware, linkedinController.scheduleLinkedInPost);
+
+router.get('/linkedin/accounts', authMiddleware, linkedinController.getLinkedInAccounts);
+// router.patch('/linkedin/toggle/:accountId', authMiddleware, linkedinController.toggleLinkedInAccount);
+router.patch('/linkedin/delete/:accountId', authMiddleware, linkedinController.disconnectLinkedInAccount);
+
+// User profile (optional)
+router.get('/linkedin/user', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('name email profilePicture');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
     }
-    return res.status(401).json({ message: 'User not authenticated' });
-};
+});
 
-// Route to redirect to LinkedIn for authentication
-router.get('/auth/linkedin', isAuthenticated, linkedinController.redirectToLinkedIn); // Ensure user is authenticated
+router.get('/test', (req, res) => {
+    res.send('LinkedIn Route Works');
+});
 
-// Route to handle LinkedIn callback
-router.get('/auth/linkedin/callback', linkedinController.handleLinkedInCallback);
-
-// Route to post to LinkedIn
-router.post('/auth/linkedin/post', isAuthenticated, linkedinController.postToLinkedIn);
-
-module.exports = router; 
+router.get('/accounts', authMiddleware, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const accounts = await LinkedInAccount.find({ user: userId });
+      res.json({ accounts });
+    } catch (error) {
+      console.error("Error fetching LinkedIn accounts:", error);
+      res.status(500).json({ message: "Server Error" });
+    }
+  });
+module.exports = router;

@@ -1,3 +1,4 @@
+const auth = require('../middleware/authMiddleware.js');
 const express = require('express');
 const { register, login } = require('../controllers/authController');
 const passport = require('passport');
@@ -37,4 +38,15 @@ router.get('/test', async (req, res) => {
     }
 });
 
+router.get('/linkedin/user', auth, async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id).select('name email profileImage linkedinId');
+      if (!user) return res.status(404).json({ msg: 'User not found' });
+      res.json(user);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server error');
+    }
+});
+  
 module.exports = router; 

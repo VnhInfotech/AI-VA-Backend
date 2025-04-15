@@ -1,4 +1,4 @@
-const ScheduledTask = require('../models/ScheduledTask');
+const ScheduledTask = require('../models/PostDraftOrSchedule');
 const GeneratedPost = require('../models/LinkedInPostModel'); // Import the model
 const cron = require('node-cron');
 const axios = require('axios');

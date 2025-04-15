@@ -8,6 +8,9 @@ const session = require('express-session');
 const passport = require('passport');
 require('./config/passport');
 const schedulerRoutes = require('./routes/scheduler'); // Import the scheduler routes
+const linkedinRoutes = require('./routes/linkedinRoutes'); // Import the linkedin routes
+const draftsRoutes = require('./routes/draftsRoutes'); // Import the draft routes
+const userRoutes = require('./routes/users'); // Import the user routes
 
 const app = express();
 
@@ -29,6 +32,9 @@ app.use(passport.session());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/scheduler', schedulerRoutes); // Use the scheduler routes
+app.use('/api/linkedin', linkedinRoutes); // Use the linkedin routes
+app.use('/api/drafts', draftsRoutes);
+app.use('/api/users', userRoutes);
 
 // Test DB connection
 app.get('/test-db', (req, res) => {
