@@ -10,7 +10,10 @@ require('./config/passport');
 const schedulerRoutes = require('./routes/scheduler'); // Import the scheduler routes
 const linkedinRoutes = require('./routes/linkedinRoutes'); // Import the linkedin routes
 const draftsRoutes = require('./routes/draftsRoutes'); // Import the draft routes
-const userRoutes = require('./routes/users'); // Import the user routes
+const userRoutes = require('./ routes/users'); // Import the user routes
+const generatedImagesRoutes = require('./routes/generatedimages');
+const vertexImage = require('./routes/vertexImage'); // Import the vertex ai routes
+const openaiImage = require('./routes/openai');
 
 const app = express();
 
@@ -20,7 +23,10 @@ app.use(cors({
     methods: ['GET', 'POST'],
     credentials: true
 }));
-app.use(express.json());
+
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -35,6 +41,9 @@ app.use('/api/scheduler', schedulerRoutes); // Use the scheduler routes
 app.use('/api/linkedin', linkedinRoutes); // Use the linkedin routes
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/generatedimages', generatedImagesRoutes);
+app.use('/api/images', vertexImage);
+app.use('/api/image', openaiImage);
 
 // Test DB connection
 app.get('/test-db', (req, res) => {

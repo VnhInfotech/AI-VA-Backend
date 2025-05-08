@@ -9,6 +9,9 @@ const postGenerationRoutes = require('./routes/scheduler');
 const linkedinRoutes = require('./routes/linkedinRoutes');
 const draftsRoutes = require('./routes/draftsRoutes');
 const userRoutes = require('./routes/users');
+const generatedimages = require('./routes/generatedimages');
+const vertexImage = require('./routes/vertexImage');
+const openaiImage = require('./routes/openai');
 
 dotenv.config();
 
@@ -42,4 +45,7 @@ app.get('/', (req, res) => {
   res.send('API is working!');
 });
 app.use('/api/drafts', draftsRoutes); // includes /draft etc.
+app.use('/api/generatedimages', generatedimages) //  includes /generatedimages etc.
+app.use('/api/images', vertexImage); // images from google vertex
+app.use('/api/image', openaiImage); // images from openai
 module.exports = app;
