@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const PIXABAY_API_KEY = "49868843-b071a54d5b4f26782fc1e1e83";
-const PEXELS_API_KEY = "LCWVnmPxo77jmM7bhp5NaArPPRQXiW9QfwVhvWJ4BeCd5np6n9jA9zhW";
+const PIXABAY_API_KEY = process.env.PIXABAY_KEY;
+const PEXELS_API_KEY = process.env.PEXELS_KEY;
 
 router.get('/search', async (req, res) => {
   const query = req.query.q;
