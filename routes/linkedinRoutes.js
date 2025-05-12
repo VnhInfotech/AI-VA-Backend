@@ -11,7 +11,6 @@ router.post('/linkedin/post', authMiddleware, linkedinController.postToLinkedIn)
 // router.post('/linkedin/schedule', authMiddleware, linkedinController.scheduleLinkedInPost);
 
 router.get('/linkedin/accounts', authMiddleware, linkedinController.getLinkedInAccounts);
-// router.patch('/linkedin/toggle/:accountId', authMiddleware, linkedinController.toggleLinkedInAccount);
 router.patch('/linkedin/delete/:accountId', authMiddleware, linkedinController.disconnectLinkedInAccount);
 
 // User profile (optional)

@@ -12,7 +12,7 @@ const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
 const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
 const REDIRECT_URI = process.env.LINKEDIN_CALLBACK_URL; // The URL to redirect to after authentication
 
-// Step 1: Redirect user to LinkedIn for authentication
+// redirect user to LinkedIn for authentication
 exports.redirectToLinkedIn = (req, res) => {
     const token = req.query.token;
     if (!token) {
@@ -46,7 +46,7 @@ exports.redirectToLinkedIn = (req, res) => {
     res.redirect(authUrl);
   };
 
-// Step 2: Handle the callback from LinkedIn
+// handle the callback from LinkedIn
 exports.handleLinkedInCallback = async (req, res) => {
     const { code, state } = req.query;
   
@@ -160,24 +160,23 @@ exports.handleLinkedInCallback = async (req, res) => {
     res.send(html);
   };
 
-// Step 3: Post to LinkedIn
+// post to LinkedIn
 exports.postToLinkedIn = async (req, res) => {
   console.log("Received request to post on LinkedIn");  // Debug log
     const { content, imageUrl, linkedinAccountId } = req.body;
     const userId = req.user.id;
     
     try {
-      // Step 1: Fetch correct LinkedIn account
+      // fetch LinkedIn account
       const account = await LinkedInAccount.findOne({
         _id: linkedinAccountId,
         user: userId,
       });
-      console.log(linkedinAccountId);
+
       if (!account || !account.accessToken) {
         return res.status(404).json({ message: 'LinkedIn account not found or unauthorized' });
       }
   
-      // Step 2: Pass credentials to service
       const postResponse = await linkedinPostService.postToLinkedIn(
         account.accessToken,
         account.linkedinId,
@@ -185,7 +184,7 @@ exports.postToLinkedIn = async (req, res) => {
         imageUrl
       );
   
-      // ✅ Step 3: Save post to DB
+      // Save post to DB
       const newPost = new LinkedInPost({
         linkedinAccount: account._id,
         originalContent: imageUrl,

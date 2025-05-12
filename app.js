@@ -12,6 +12,7 @@ const userRoutes = require('./routes/users');
 const generatedimages = require('./routes/generatedimages');
 const vertexImage = require('./routes/vertexImage');
 const openaiImage = require('./routes/openai');
+const path = require('path');
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/drafts', draftsRoutes); // includes /draft etc.
 app.use('/api/generatedimages', generatedimages) //  includes /generatedimages etc.
+app.use('/generated_images', express.static(path.join(__dirname, 'generated_images')));
 app.use('/api/images', vertexImage); // images from google vertex
 app.use('/api/image', openaiImage); // images from openai
 module.exports = app;

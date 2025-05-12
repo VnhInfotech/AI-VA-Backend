@@ -14,6 +14,7 @@ const userRoutes = require('./ routes/users'); // Import the user routes
 const generatedImagesRoutes = require('./routes/generatedimages');
 const vertexImage = require('./routes/vertexImage'); // Import the vertex ai routes
 const openaiImage = require('./routes/openai');
+const path = require('path');
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/generatedimages', generatedImagesRoutes);
 app.use('/api/images', vertexImage);
 app.use('/api/image', openaiImage);
+app.use('/generated_images', express.static(path.join(__dirname, 'generated_images')));
 
 // Test DB connection
 app.get('/test-db', (req, res) => {

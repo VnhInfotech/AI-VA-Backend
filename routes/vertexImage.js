@@ -9,10 +9,15 @@ const LOCATION = process.env.GOOGLE_LOCATION;
 const MODEL_VERSION = process.env.GOOGLE_MODEL_VERSION;
 
 const imagenResults = {};
+const fs = require('fs');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
+const imagesFolder = path.join(__dirname, '../generated_images');
+fs.mkdirSync(imagesFolder, { recursive: true });
+
 router.post('/generate-image-async', async (req, res) => {
-  const { prompt, sampleCount = 1, aspectRatio = '1:1' } = req.body;
+  const { prompt, sampleCount = 3, aspectRatio = '1:1' } = req.body; // make dynamic once pricing plans are decided
 
   if (!prompt || typeof prompt !== "string" || prompt.trim() === "") {
     return res.status(400).json({ error: 'Prompt is required and must be non-empty' });
@@ -37,9 +42,10 @@ router.post('/generate-image-async', async (req, res) => {
 
       const requestBody = {
         instances: [{ prompt: enhancedPrompt }],
-        parameters: { sampleCount, addWatermark: true, aspectRatio }
+        parameters: { sampleCount, aspectRatio }
       };
 
+      // console.log(requestBody);
       const response = await axios.post(endpoint, requestBody, {
         headers: {
           Authorization: `Bearer ${accessToken.token}`,
@@ -53,7 +59,21 @@ router.post('/generate-image-async', async (req, res) => {
         prediction.structValue?.fields?.bytesBase64Encoded?.stringValue
       );
 
-      imagenResults[requestId] = { imageBase64s }; 
+      const imagePaths = [];
+
+      for (let i = 0; i < imageBase64s.length; i++) {
+        const base64 = imageBase64s[i];
+        const filename = `vertex_${Date.now()}_${i}`;
+        const filePath = path.join(imagesFolder, `${filename}.png`);
+        const buffer = Buffer.from(base64, 'base64');
+
+        fs.writeFileSync(filePath, buffer);
+
+        const publicPath = `generated_images/${filename}.png`; 
+        imagePaths.push(publicPath);
+      }
+
+      imagenResults[requestId] = { imagePaths };
     } catch (error) {
       console.error("Imagen generation failed:", error?.response?.data || error.message);
       imagenResults[requestId] = { error: 'Generation failed' };
@@ -69,8 +89,9 @@ router.get('/check-image-result/:requestId', (req, res) => {
 
   if (result.error) return res.status(500).json({ error: result.error });
 
-  return res.json({ imageBase64s: result.imageBase64s });
+  return res.json({ imagePaths: result.imagePaths });
 
 });
+
 
 module.exports = router;
