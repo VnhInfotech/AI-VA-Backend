@@ -11,6 +11,7 @@ const schedulerRoutes = require('./routes/scheduler'); // Import the scheduler r
 const linkedinRoutes = require('./routes/linkedinRoutes'); // Import the linkedin routes
 const facebookRoutes = require('./routes/facebookRoutes');
 const instagramRoutes = require('./routes/instagramRoutes');
+const xRoutes = require('./routes/xRoutes');
 const draftsRoutes = require('./routes/draftsRoutes'); // Import the draft routes
 const userRoutes = require('./ routes/users'); // Import the user routes
 const generatedImagesRoutes = require('./routes/generatedimages');
@@ -45,6 +46,7 @@ app.use('/api/scheduler', schedulerRoutes); // Use the scheduler routes
 app.use('/api/linkedin', linkedinRoutes); // Use the linkedin routes
 app.use('/api/facebook', facebookRoutes); // Use the facebook routes
 app.use('/api/instagram', instagramRoutes); // Use the facebook routes
+app.use('/api/auth', xRoutes);
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/generatedimages', generatedImagesRoutes);

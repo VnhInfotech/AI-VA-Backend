@@ -9,6 +9,7 @@ const postGenerationRoutes = require('./routes/scheduler');
 const linkedinRoutes = require('./routes/linkedinRoutes');
 const facebookRoutes = require('./routes/facebookRoutes');
 const instagramRoutes = require('./routes/instagramRoutes');
+const xRoutes = require('./routes/xRoutes');
 const draftsRoutes = require('./routes/draftsRoutes');
 const userRoutes = require('./routes/users');
 const generatedimages = require('./routes/generatedimages');
@@ -47,6 +48,7 @@ app.use('/api', postGenerationRoutes);
 app.use('/api/auth', linkedinRoutes); // includes /linkedin etc.
 app.use('/api/auth', facebookRoutes); // includes /linkedin etc.
 app.use('/api/auth', instagramRoutes);
+app.use('/api/auth', xRoutes);
 app.get('/', (req, res) => {
   res.send('API is working!');
 });
