@@ -10,7 +10,9 @@ const PostDraftOrSchedule = new mongoose.Schema({
     isDraft: { type: Boolean, default: false },
     generatedPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'GeneratedPost' },
     linkedinAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'LinkedInAccount' },
-    status: { type: String, default: "pending" }, // "pending" | "posted" | "failed"
+      facebookPageId: { type: String },
+  facebookPostId: { type: String },
+    status: { type: String, default: "pending" },
 });
 
 module.exports = mongoose.model('PostDraftOrSchedule', PostDraftOrSchedule);

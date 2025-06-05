@@ -6,7 +6,7 @@ const PostDraftOrSchedule = require('../models/PostDraftOrSchedule');
 const IMAGE_DIR = path.join(__dirname, '../generated_images');
 
 const startImageCleanupCron = () => {
-  cron.schedule('0 * * * *', async () => { // run every hour
+  cron.schedule('0 * * * *', async () => {
     console.log('image cleanup');
 
     try {
@@ -19,7 +19,7 @@ const startImageCleanupCron = () => {
         const fileCreated = new Date(stats.birthtime);
 
         const relativePath = `generated_images/${file}`;
-        const isReferenced = await PostDraftOrSchedule.exists({ imageUrl: relativePath });
+        const isReferenced = await PostDraftOrSchedule.exists({ imageUrl: relativePath, isDraft : true });
 
         if (!isReferenced) {
           fs.unlinkSync(filePath);

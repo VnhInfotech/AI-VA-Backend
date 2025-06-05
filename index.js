@@ -9,11 +9,14 @@ const passport = require('passport');
 require('./config/passport');
 const schedulerRoutes = require('./routes/scheduler'); // Import the scheduler routes
 const linkedinRoutes = require('./routes/linkedinRoutes'); // Import the linkedin routes
+const facebookRoutes = require('./routes/facebookRoutes');
+const instagramRoutes = require('./routes/instagramRoutes');
 const draftsRoutes = require('./routes/draftsRoutes'); // Import the draft routes
 const userRoutes = require('./ routes/users'); // Import the user routes
 const generatedImagesRoutes = require('./routes/generatedimages');
 const vertexImage = require('./routes/vertexImage'); // Import the vertex ai routes
 const openaiImage = require('./routes/openai');
+const openaiCaption = require('./routes/openaiCaption');
 const path = require('path');
 
 const app = express();
@@ -40,11 +43,14 @@ app.use(passport.session());
 app.use('/api/auth', authRoutes);
 app.use('/api/scheduler', schedulerRoutes); // Use the scheduler routes
 app.use('/api/linkedin', linkedinRoutes); // Use the linkedin routes
+app.use('/api/facebook', facebookRoutes); // Use the facebook routes
+app.use('/api/instagram', instagramRoutes); // Use the facebook routes
 app.use('/api/drafts', draftsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/generatedimages', generatedImagesRoutes);
 app.use('/api/images', vertexImage);
 app.use('/api/image', openaiImage);
+app.use('/api/openai', openaiCaption);
 app.use('/generated_images', express.static(path.join(__dirname, 'generated_images')));
 
 // Test DB connection

@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/linkedin/redirect', linkedinController.redirectToLinkedIn);
 router.get('/linkedin/callback', linkedinController.handleLinkedInCallback);
 router.post('/linkedin/post', authMiddleware, linkedinController.postToLinkedIn);
-// router.post('/linkedin/schedule', authMiddleware, linkedinController.scheduleLinkedInPost);
+router.post('/linkedin/schedule', authMiddleware, linkedinController.scheduleLinkedInPost);
 
 router.get('/linkedin/accounts', authMiddleware, linkedinController.getLinkedInAccounts);
 router.patch('/linkedin/delete/:accountId', authMiddleware, linkedinController.disconnectLinkedInAccount);

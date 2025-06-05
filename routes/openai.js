@@ -8,7 +8,7 @@ const openai = new OpenAI({
 });
 
 router.post('/generate-dalle-image', async (req, res) => {
-  const { prompt, size = "1024x1024", n = 1  } = req.body;
+  const { prompt, size = "1024x1024" ,n = 1  } = req.body;
   if (!prompt || typeof prompt !== "string" || prompt.trim() === "") {
     return res.status(400).json({ error: 'Prompt is required and must be non-empty' });
   }
@@ -18,10 +18,9 @@ router.post('/generate-dalle-image', async (req, res) => {
   }
   try {
     const response = await openai.images.generate({
-      model: "dall-e-2",
+      model: "gpt-image-1",
       prompt: `Create an engaging image with a line that says anything related to ${prompt.trim()}`,
       size,
-      n
     });
 
     const imageUrls = response.data.map(img => img.url);
