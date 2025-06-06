@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 const querystring = require('querystring');
 const InstagramAccount = require('../models/InstagramAccount');
 const PostDraftOrSchedule = require('../models/PostDraftOrSchedule');
+const instagramPostService = require('../Services/instagramPostService');
+const InstagramPost = require('../models/InstagramPostModel');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const instagramQueue = require('../scheduler/instagramQueue');
@@ -32,7 +34,7 @@ exports.redirectToInstagram = (req, res) => {
   };
   const state = Buffer.from(JSON.stringify(statePayload)).toString('base64');
   // generate this url from instagram meta app
-  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=558606803988576&redirect_uri=https://938e-122-170-188-18.ngrok-free.app/api/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights&state=${encodeURIComponent(state)}`;
+  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=558606803988576&redirect_uri=https://4703-2402-a00-401-43ed-7dfb-dea7-34ce-10f1.ngrok-free.app/api/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights&state=${encodeURIComponent(state)}`;
   res.redirect(authUrl);
 };
 
@@ -161,7 +163,7 @@ exports.getInstagramAccounts = async (req, res) => {
     const accounts = await InstagramAccount.find({ user: req.user.id, isEnabled: true });
     const accountsWithPosts = await Promise.all(
       accounts.map(async (account) => {
-        const postCount = await InstagramAccount.countDocuments({ InstagramAccount: account._id });
+        const postCount = await InstagramPost.countDocuments({ InstagramAccount: account._id });
         return {
           ...account.toObject(),
           totalPosts: postCount,
@@ -173,6 +175,44 @@ exports.getInstagramAccounts = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+// post to LinkedIn
+exports.publishInstagramPost = async (req, res) => {
+  console.log("Received request to post on Instagram"); 
+  const { caption, imageUrl, instagramAccountId } = req.body;
+  const userId = req.user.id;
+
+  try {
+const account = await InstagramAccount.findOne({ user: userId,
+});
+
+    if (!account || !account.accessToken) {
+      return res.status(404).json({ message: 'Instagram account not found or unauthorized' });
+    }
+
+const postResponse = await instagramPostService.publishToInstagram(
+   account.instagramId,
+  imageUrl,
+  caption,
+  userId
+);
+
+    const newPost = new InstagramPost({
+      instagramAccount : account,
+      instagramAccountId: account._id,
+      imageUrl: imageUrl,
+      caption: caption,
+      postedAt: new Date(),
+    });
+
+    await newPost.save();
+
+    res.status(200).json({ message: 'Post created successfully', postResponse });
+  } catch (error) {
+    console.error('Error posting to Instagram:', error.response?.data || error.message);
+    res.status(500).json({ message: 'Error posting to Instagram' });
   }
 };
 
@@ -237,12 +277,12 @@ exports.getInstagramAccounts = async (req, res) => {
 // };
 
 exports.scheduleInstagramPost = async (req, res) => {
-  const { caption, imageUrl, scheduledTime, instagramAccountId } = req.body;
+  const { instagramAccountId, imageUrl, caption, scheduledTime } = req.body;
   const userId = req.user.id;
 
   try {
     const account = await InstagramAccount.findOne({
-      instagramId: instagramAccountId,
+      // instagramId: instagramAccountId,
       user: userId
     });
 
@@ -278,3 +318,23 @@ exports.scheduleInstagramPost = async (req, res) => {
   }
 };
 
+// disconnect linkedin account : set isEnabled : false
+exports.disconnectInstagramAccount = async (req, res) => {
+  try {
+    const accountId = req.params.accountId;
+
+    const updatedAccount = await InstagramAccount.findByIdAndUpdate(
+      accountId,
+      { isEnabled: false },
+      { new: true }
+    );
+
+    if (!updatedAccount) {
+      return res.status(404).json({ message: "Instagram account not found" });
+    }
+
+    res.status(200).json({ message: "Account disconnected", account: updatedAccount });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to disconnect account", error });
+  }
+};

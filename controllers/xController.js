@@ -208,8 +208,38 @@ exports.disconnectXAccount = async (req, res) => {
   }
 };
 
-exports.postXImageTweet = async (req, res) => {
-  const { accountId, caption, imageUrl } = req.body;
+// exports.postXImageTweet = async (req, res) => {
+//   const { accountId, caption, imageUrl } = req.body;
+
+//   try {
+//     const account = await XAccount.findOne({ twitterId: accountId });
+//     if (!account || !account.isEnabled) {
+//       return res.status(404).json({ message: 'X account not found or disabled' });
+//     }
+
+//     const twitterClient = new TwitterApi({
+//       appKey: process.env.TWITTER_CONSUMER_KEY,
+//       appSecret: process.env.TWITTER_CONSUMER_SECRET,
+//       accessToken: account.accessToken,
+//       accessSecret: account.accessSecret
+//     });
+
+//     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+//     const mediaData = Buffer.from(response.data, 'binary');
+
+//     const mediaId = await twitterClient.v1.uploadMedia(mediaData, { mimeType: 'image/jpeg' });
+
+//     const tweet = await twitterClient.v1.tweet(caption, { media_ids: [mediaId] });
+
+//     res.status(200).json({ success: true, tweetId: tweet.id_str });
+//   } catch (error) {
+//     console.error('Error posting to X:', error.response?.data || error.message);
+//     res.status(500).json({ message: 'Failed to post to X', error: error.message });
+//   }
+// };
+
+exports.postImageTweetV1 = async (req, res) => {
+    const { accountId, caption, imageUrl } = req.body;
 
   try {
     const account = await XAccount.findOne({ twitterId: accountId });
@@ -217,23 +247,26 @@ exports.postXImageTweet = async (req, res) => {
       return res.status(404).json({ message: 'X account not found or disabled' });
     }
 
-    const twitterClient = new TwitterApi({
-      appKey: process.env.TWITTER_CONSUMER_KEY,
-      appSecret: process.env.TWITTER_CONSUMER_SECRET,
-      accessToken: account.accessToken,
-      accessSecret: account.accessSecret
+    const client = new TwitterApi({
+      appKey:    'YOUR_CONSUMER_KEY',
+      appSecret: 'YOUR_CONSUMER_SECRET',
+      accessToken: req.user.accessToken,
+      accessSecret: req.user.accessSecret,
     });
 
+    const imageUrl = req.body.imageUrl;
     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    const mediaData = Buffer.from(response.data, 'binary');
+    const imageBuffer = Buffer.from(response.data);
+const mediaType = response.headers['content-type'] || 'image/jpeg';
 
-    const mediaId = await twitterClient.v1.uploadMedia(mediaData, { mimeType: 'image/jpeg' });
+const mediaId = await client.v1.uploadMedia(imageBuffer, { mimeType: mediaType });
 
-    const tweet = await twitterClient.v1.tweet(caption, { media_ids: [mediaId] });
+    const caption = req.body.caption || '';
+    const tweet = await client.v1.tweet(caption, { media_ids: [mediaId] });
 
-    res.status(200).json({ success: true, tweetId: tweet.id_str });
+    res.json({ success: true, tweet });
   } catch (error) {
-    console.error('Error posting to X:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Failed to post to X', error: error.message });
+    console.error('V1 Tweet Error:', error);
+    res.status(500).json({ error: 'Failed to post image tweet via v1.1 API.' });
   }
 };

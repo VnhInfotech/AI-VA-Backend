@@ -167,7 +167,7 @@ exports.getFacebookAccounts = async (req, res) => {
     const accounts = await FacebookAccount.find({ user: req.user.id, isEnabled: true });
     const accountsWithPosts = await Promise.all(
       accounts.map(async (account) => {
-        const postCount = await FacebookAccount.countDocuments({ FacebookAccount: account._id });
+        const postCount = await FacebookPost.countDocuments({ FacebookAccount: account._id });
         return {
           ...account.toObject(),
           totalPosts: postCount,
@@ -329,7 +329,7 @@ exports.getUserPages = async (req, res) => {
 
 // schedule post to fb page
 exports.scheduleFacebookPagePost = async (req, res) => {
-  const { imageUrl, caption, pageId, scheduledTime } = req.body;
+const { imageUrl, caption, selectedPageId, scheduleDate } = req.body;
   const user = req.user;
 
   try {
@@ -348,17 +348,17 @@ exports.scheduleFacebookPagePost = async (req, res) => {
     });
 
     const pages = accountsRes.data.data;
-    const page = pages.find(p => p.id === pageId);
+    const page = pages.find(p => p.id === selectedPageId);
 
     if (!page) {
       return res.status(400).json({ message: "User does not manage this Facebook Page." });
     }
 
     const pageAccessToken = page.access_token;
-    const publishTimeUnix = Math.floor(new Date(scheduledTime).getTime() / 1000);
+    const publishTimeUnix = Math.floor(new Date(scheduleDate).getTime() / 1000);
 
     const postRes = await axios.post(
-      `https://graph.facebook.com/v18.0/${pageId}/photos`,
+      `https://graph.facebook.com/v18.0/${selectedPageId}/photos`,
       null,
       {
         params: {
@@ -378,11 +378,11 @@ exports.scheduleFacebookPagePost = async (req, res) => {
       platform: "Facebook",
       imageUrl,
       content: caption,
-      scheduledTime: new Date(scheduledTime),
+      scheduledTime: new Date(scheduleDate),
       isDraft: false,
       isSent: false,
       status: "pending",
-      facebookPageId: pageId,
+      facebookPageId: selectedPageId,
       facebookPostId: fbPostId,
     });
 

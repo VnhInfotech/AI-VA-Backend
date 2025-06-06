@@ -1,7 +1,7 @@
 const axios = require('axios');
 const InstagramAccount = require('../models/InstagramAccount');
 
-const publishToInstagram = async (igAccountId, imageUrl, caption, userId = null) => {
+const publishToInstagram = async (igAccountId, imageUrl, caption, userId) => {
   if (!igAccountId || !imageUrl || !caption) {
     throw new Error('Missing required fields: igAccountId, imageUrl, caption.');
   }
@@ -37,4 +37,6 @@ const publishToInstagram = async (igAccountId, imageUrl, caption, userId = null)
   };
 };
 
-module.exports = publishToInstagram;
+module.exports = {
+  publishToInstagram,
+};

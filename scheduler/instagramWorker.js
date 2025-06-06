@@ -12,7 +12,7 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error("MongoDB connection error in Instagram Worker:", err.message);
 });
 
-const publishToInstagram = require('../Services/instagramPostService');
+const instagramPostService = require('../Services/instagramPostService');
 const InstagramAccount = require('../models/InstagramAccount');
 const InstagramPost = require('../models/InstagramPostModel');
 const PostDraftOrSchedule = require('../models/PostDraftOrSchedule');
@@ -39,7 +39,13 @@ const worker = new Worker('instagram-post-queue', async job => {
     }
 
     try {
-      const result = await publishToInstagram(account.instagramId, post.imageUrl, post.content);
+      const result = await instagramPostService.publishToInstagram(
+        account.instagramId,
+        post.imageUrl,
+        post.content,
+        userId
+      );
+      
       const igPostId = result?.postId?.id || null;
 
       await new InstagramPost({

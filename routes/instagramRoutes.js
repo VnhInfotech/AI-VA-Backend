@@ -10,4 +10,5 @@ router.get('/instagram/callback', instagramController.handleInstagramCallback);
 router.get('/instagram/accounts', authMiddleware, instagramController.getInstagramAccounts);
 router.post('/instagram/post', authMiddleware, instagramController.publishInstagramPost);
 router.post('/instagram/schedule', authMiddleware, instagramController.scheduleInstagramPost);
+router.patch('/instagram/delete/:accountId', authMiddleware, instagramController.disconnectInstagramAccount);
 module.exports = router;
