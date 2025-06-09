@@ -14,6 +14,7 @@ const PostDraftOrSchedule = new mongoose.Schema({
       facebookPageId: { type: String },
   facebookPostId: { type: String },
     instagramAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'InstagramAccount' },
+     xAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'XAccount' },
     status: { type: String, default: "pending" },
 });
 

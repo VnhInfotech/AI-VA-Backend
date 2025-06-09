@@ -4,6 +4,10 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const XAccount = require('../models/XAccount');
 const stateStore = new Map();
+const xPostService = require('../Services/xPostService');
+const PostDraftOrSchedule = require('../models/PostDraftOrSchedule');
+const XPost = require('../models/XPostModel');
+const socialQueue = require('../scheduler/socialQueue');
 
 function saveState(oauth_token, state) {
   stateStore.set(oauth_token, state);
@@ -113,7 +117,7 @@ exports.handleXCallback = async (req, res) => {
     if (existingAccount) {
       existingAccount.isEnabled = true;
       existingAccount.accessToken = accessToken;
-      existingAccount.accessSecret = accessSecret;
+      existingAccount.accessTokenSecret = accessSecret;
       existingAccount.name = name;
       existingAccount.username = username;
       existingAccount.profilePicture = picture;
@@ -131,7 +135,7 @@ exports.handleXCallback = async (req, res) => {
         username,
         profilePicture: picture,
         accessToken,
-        accessSecret,
+        accessTokenSecret: accessSecret,
         isEnabled: true,
       },
       { new: true, upsert: true }
@@ -208,65 +212,112 @@ exports.disconnectXAccount = async (req, res) => {
   }
 };
 
-// exports.postXImageTweet = async (req, res) => {
-//   const { accountId, caption, imageUrl } = req.body;
+// exports.postToXWithMedia = async (req, res) => {
+//   const { xAccountId, caption, imageUrl } = req.body;
+//   const userId = req.user.id;
+  
+//   if (!xAccountId || !caption || !imageUrl) {
+//     return res.status(400).json({ success: false, message: 'Missing xAccountId, text, or imageUrl.' });
+//   }
 
 //   try {
-//     const account = await XAccount.findOne({ twitterId: accountId });
-//     if (!account || !account.isEnabled) {
-//       return res.status(404).json({ message: 'X account not found or disabled' });
+//     // const account = await XAccount.findOne({ userId: xAccountId });
+//     const account = await XAccount.findOne({ user: userId,
+//     });
+    
+//     if (!account || !account.accessToken || !account.accessTokenSecret) {
+//       return res.status(403).json({ success: false, message: 'No connected Twitter account.' });
 //     }
 
-//     const twitterClient = new TwitterApi({
+//     const userClient = new TwitterApi({
 //       appKey: process.env.TWITTER_CONSUMER_KEY,
 //       appSecret: process.env.TWITTER_CONSUMER_SECRET,
 //       accessToken: account.accessToken,
-//       accessSecret: account.accessSecret
+//       accessSecret: account.accessTokenSecret,
 //     });
 
-//     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-//     const mediaData = Buffer.from(response.data, 'binary');
+//     const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+//     const mediaBuffer = Buffer.from(imageResponse.data, 'binary');
 
-//     const mediaId = await twitterClient.v1.uploadMedia(mediaData, { mimeType: 'image/jpeg' });
+//     const mediaId = await userClient.v1.uploadMedia(mediaBuffer, { mimeType: 'image/png' });
 
-//     const tweet = await twitterClient.v1.tweet(caption, { media_ids: [mediaId] });
+//     // const tweet = await userClient.v2.tweet('Hello world from API v2!');
 
-//     res.status(200).json({ success: true, tweetId: tweet.id_str });
-//   } catch (error) {
-//     console.error('Error posting to X:', error.response?.data || error.message);
-//     res.status(500).json({ message: 'Failed to post to X', error: error.message });
+//     const tweet = await userClient.v2.tweet({
+//       text: caption,
+//       media: { media_ids: [mediaId] }
+//     });
+
+//     return res.json({ success: true, tweetId: tweet.data.id });
+//   } catch (err) {
+//     console.error('Error posting tweet with image:', err?.response?.data || err.message);
+//     return res.status(500).json({ success: false, message: 'Failed to post tweet with image.' });
 //   }
 // };
 
-exports.postImageTweetV1 = async (req, res) => {
-    const { accountId, caption, imageUrl } = req.body;
+exports.postToXWithMedia = async (req, res) => {
+  const { xAccountId, caption, imageUrl } = req.body;
+  const userId = req.user.id;
+
+  if (!xAccountId || !caption || !imageUrl) {
+    return res.status(400).json({ success: false, message: 'Missing xAccountId, text, or imageUrl.' });
+  }
 
   try {
-    const account = await XAccount.findOne({ twitterId: accountId });
-    if (!account || !account.isEnabled) {
-      return res.status(404).json({ message: 'X account not found or disabled' });
-    }
+    const response = await xPostService.postToX({ xAccountId, caption, imageUrl, userId });
 
-    const client = new TwitterApi({
-      appKey:    'YOUR_CONSUMER_KEY',
-      appSecret: 'YOUR_CONSUMER_SECRET',
-      accessToken: req.user.accessToken,
-      accessSecret: req.user.accessSecret,
+    const newPost = new XPost({
+      xAccount: xAccountId,
+      content: caption,
+      mediaUrls: [imageUrl],
+      tweetId: response.tweetId,
+      postedAt: new Date(),
     });
 
-    const imageUrl = req.body.imageUrl;
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    const imageBuffer = Buffer.from(response.data);
-const mediaType = response.headers['content-type'] || 'image/jpeg';
+    await newPost.save();
+    res.status(200).json({ success: true, ...response });
+  } catch (err) {
+    console.error('Error posting tweet with image:', err?.response?.data || err.message);
+    res.status(500).json({ success: false, message: 'Failed to post tweet with image.' });
+  }
+};
 
-const mediaId = await client.v1.uploadMedia(imageBuffer, { mimeType: mediaType });
+exports.scheduleXPost = async (req, res) => {
+  const { xAccountId, imageUrl, caption, scheduledTime } = req.body;
+  const userId = req.user.id;
 
-    const caption = req.body.caption || '';
-    const tweet = await client.v1.tweet(caption, { media_ids: [mediaId] });
+  try {
+    const account = await XAccount.findOne({
+      user: userId
+    });
 
-    res.json({ success: true, tweet });
+    if (!account) {
+      return res.status(404).json({ message: "X account not found" });
+    }
+
+    const post = await new PostDraftOrSchedule({
+      user: userId,
+      platform: 'X',
+      content: caption,
+      imageUrl,
+      scheduledTime,
+      isDraft: false,
+      isSent: false,
+      status: 'pending',
+      xAccountId: account._id
+    }).save();
+
+    const delay = Math.max(0, new Date(scheduledTime) - new Date());
+
+    const job = await socialQueue.add('social-media-post-queue', { postId: post._id }, {
+  delay,
+  attempts: 3
+});
+    console.log(`X Job ${job.id} scheduled with delay: ${delay}ms at ${scheduledTime}`);
+
+    res.status(200).json({ message: "X post scheduled successfully", postId: post._id });
   } catch (error) {
-    console.error('V1 Tweet Error:', error);
-    res.status(500).json({ error: 'Failed to post image tweet via v1.1 API.' });
+    console.error("X scheduling failed:", error.message || error);
+    res.status(500).json({ message: "X scheduling failed" });
   }
 };

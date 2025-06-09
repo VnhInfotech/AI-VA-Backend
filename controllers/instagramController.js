@@ -10,6 +10,7 @@ const InstagramPost = require('../models/InstagramPostModel');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const instagramQueue = require('../scheduler/instagramQueue');
+const socialQueue = require('../scheduler/socialQueue');
 const INSTAGRAM_REDIRECT_URI = process.env.INSTAGRAM_CALLBACK_URL;
 
 // insta OAuth flow
@@ -34,7 +35,7 @@ exports.redirectToInstagram = (req, res) => {
   };
   const state = Buffer.from(JSON.stringify(statePayload)).toString('base64');
   // generate this url from instagram meta app
-  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=558606803988576&redirect_uri=https://4703-2402-a00-401-43ed-7dfb-dea7-34ce-10f1.ngrok-free.app/api/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights&state=${encodeURIComponent(state)}`;
+  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=558606803988576&redirect_uri=https://7c45-2402-a00-401-43ed-35ce-528e-928b-a2af.ngrok-free.app/api/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights&state=${encodeURIComponent(state)}`;
   res.redirect(authUrl);
 };
 
@@ -304,7 +305,7 @@ exports.scheduleInstagramPost = async (req, res) => {
 
     const delay = Math.max(0, new Date(scheduledTime) - new Date());
 
-    const job = await instagramQueue.add('instagram-post-queue', { postId: post._id }, {
+    const job = await socialQueue.add('social-media-post-queue', { postId: post._id }, {
       delay,
       attempts: 3
     });

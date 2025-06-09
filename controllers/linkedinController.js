@@ -8,6 +8,7 @@ const LinkedInAccount = require('../models/LinkedInAccount');
 const LinkedInPost = require('../models/LinkedInPostModel');
 const PostDraftOrSchedule = require('../models/PostDraftOrSchedule');
 const linkedinQueue = require('../scheduler/linkedinQueue');
+const socialQueue = require('../scheduler/socialQueue');
 
 // LinkedIn app credentials
 const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
@@ -281,7 +282,7 @@ exports.scheduleLinkedInPost = async (req, res) => {
     }).save();
 
     const delay = Math.max(0, new Date(scheduledTime) - new Date());
-    const job = await linkedinQueue.add('linkedin-post-queue', { postId: post._id }, {
+    const job = await socialQueue.add('social-media-post-queue', { postId: post._id }, {
       delay,
       attempts: 3
     });
