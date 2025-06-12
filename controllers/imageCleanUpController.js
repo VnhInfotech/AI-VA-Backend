@@ -2,6 +2,10 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const PostDraftOrSchedule = require('../models/PostDraftOrSchedule');
+const InstagramPost = require('../models/InstagramPostModel');
+const FacebookPost = require('../models/FacebookPostModel');
+const LinkedInPost = require('../models/LinkedInPostModel');
+const XPost = require('../models/XPostModel');
 
 const IMAGE_DIR = path.join(__dirname, '../generated_images');
 
@@ -19,7 +23,14 @@ const startImageCleanupCron = () => {
         const fileCreated = new Date(stats.birthtime);
 
         const relativePath = `generated_images/${file}`;
-        const isReferenced = await PostDraftOrSchedule.exists({ imageUrl: relativePath, isDraft : true });
+
+        const isReferenced = await Promise.any([
+          PostDraftOrSchedule.exists({ imageUrl: relativePath }),
+          InstagramPost.exists({ imageUrl: relativePath }),
+          FacebookPost.exists({ imageUrl: relativePath }),
+          LinkedInPost.exists({ imageUrl: relativePath }),
+          XPost.exists({ imageUrl: relativePath }),
+        ]).catch(() => false);
 
         if (!isReferenced) {
           fs.unlinkSync(filePath);

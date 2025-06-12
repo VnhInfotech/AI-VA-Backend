@@ -42,9 +42,11 @@ exports.redirectToX = async (req, res) => {
   });
 
   try {
-    const { oauth_token, oauth_token_secret, url } = await client.generateAuthLink(
+    let { oauth_token, oauth_token_secret, url } = await client.generateAuthLink(
       process.env.X_CALLBACK_URL
     );
+
+    url += '&force_login=true';
 
     const jwtToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '5m' });
 
@@ -176,17 +178,17 @@ const sendPopupResponse = (res, success, message) => {
 exports.getXAccounts = async (req, res) => {
   try {
     const accounts = await XAccount.find({ user: req.user.id, isEnabled: true });
-    // const accountsWithPosts = await Promise.all(
-    //   accounts.map(async (account) => {
-    //     const postCount = await XPost.countDocuments({ xAccount: account._id });
-    //     return {
-    //       ...account.toObject(),
-    //       totalPosts: postCount
-    //     };
-    //   })
-    // );
+    const accountsWithPosts = await Promise.all(
+      accounts.map(async (account) => {
+        const postCount = await XPost.countDocuments({ xAccount: account._id });
+        return {
+          ...account.toObject(),
+          totalPosts: postCount
+        };
+      })
+    );
 
-    res.json({ accounts });
+    res.json({ accounts : accountsWithPosts });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -259,15 +261,16 @@ exports.postToXWithMedia = async (req, res) => {
   const { xAccountId, caption, imageUrl } = req.body;
   const userId = req.user.id;
 
-  if (!xAccountId || !caption || !imageUrl) {
-    return res.status(400).json({ success: false, message: 'Missing xAccountId, text, or imageUrl.' });
-  }
-
   try {
-    const response = await xPostService.postToX({ xAccountId, caption, imageUrl, userId });
+      const account = await XAccount.findOne({ _id: xAccountId, user: userId });
+        if (!account || !account.accessToken || !account.accessTokenSecret) {
+      return res.status(404).json({ success: false, message: 'Selected X account not found or unauthorized.' });
+    }
+    
+    const response = await xPostService.postToX({ caption, imageUrl, account });
 
     const newPost = new XPost({
-      xAccount: xAccountId,
+     xAccount: account._id,
       content: caption,
       mediaUrls: [imageUrl],
       tweetId: response.tweetId,
@@ -288,6 +291,7 @@ exports.scheduleXPost = async (req, res) => {
 
   try {
     const account = await XAccount.findOne({
+      _id: xAccountId,
       user: userId
     });
 

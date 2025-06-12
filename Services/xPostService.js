@@ -2,14 +2,9 @@ const { TwitterApi } = require('twitter-api-v2');
 const axios = require('axios');
 const XAccount = require('../models/XAccount');
 
-const postToX = async ({ xAccountId, caption, imageUrl, userId }) => {
-  if (!xAccountId || !caption || !imageUrl) {
+const postToX = async ({ caption, imageUrl, account }) => {
+  if (!account || !caption || !imageUrl) {
     throw new Error('Missing required fields: userId, caption, imageUrl');
-  }
-
-  const account = await XAccount.findOne({ user: userId });
-  if (!account || !account.accessToken || !account.accessTokenSecret) {
-    throw new Error('Twitter account not found or unauthorized.');
   }
 
   const client = new TwitterApi({

@@ -278,7 +278,7 @@ exports.scheduleLinkedInPost = async (req, res) => {
       isDraft: false,
       isSent: false,
       status: 'pending',
-      linkedinAccountId: account._id
+      linkedinAccountId: linkedinAccountId
     }).save();
 
     const delay = Math.max(0, new Date(scheduledTime) - new Date());
